@@ -68,7 +68,7 @@ class Post_To_Email_Plugin {
 				'mail_message_excerpt_length' => 250,
 			);
 			$option_defaults = apply_filters('posttoemail_option_defaults', $option_defaults);
-            if ($plugin->subclass->update_option($option_defaults)) {
+            if ($plugin->subclass->update_options($option_defaults)) {
             	// ok
             }
         	else {
