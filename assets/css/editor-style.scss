@@ -1,0 +1,15 @@
+@charset "UTF-8";
+
+body {
+	text-rendering: optimizeLegibility;
+	font-family: sans-serif;
+	font-size: 16px;
+	font-size: 1rem;
+	font-weight: normal;
+	font-style: normal;
+	text-decoration: none;
+	&#tinymce {
+		margin: 16px;
+		margin: 1rem;
+	}
+}
