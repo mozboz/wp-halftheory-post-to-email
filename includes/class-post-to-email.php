@@ -27,7 +27,7 @@ class Post_To_Email {
 	public static $has_buddypress = false;
 	public static $has_bbpress = false;
 	public static $hash = '###';
-	public static $is_test = true;
+	public static $is_test = false;
 
 	private function __construct() {
 	}
@@ -255,11 +255,9 @@ class Post_To_Email {
 		$str = str_replace("&nbsp;", ' ', $str);
 		$str = str_replace("&#160;", ' ', $str);
 		$str = str_replace("\xc2\xa0", ' ',$str);
-
 		if (strpos($str, "</") !== false) {
 			$str = preg_replace("/[\t\n\r ]*(<\/[^>]+>)/s", "$1", $str); // no space before closing tags
 		}
-
 		$str = preg_replace("/[\t ]*(\n|\r)[\t ]*/s", "$1", $str);
 		$str = preg_replace("/(\n\r){3,}/s", "$1$1", $str);
 		$str = preg_replace("/[\n]{3,}/s", "\n\n", $str);
@@ -368,7 +366,7 @@ class Post_To_Email {
 						$replaced = true;
 					}
 				}
-				elseif (preg_match("~^[\s]*$value~i", $text, $match)) {
+				elseif (preg_match("~^[\s]*".preg_quote($value, '/')."~i", $text, $match)) {
 					$len_res = mb_strlen($text);
 					$len_value = mb_strlen($match[0]);
 					if ($len_res > $len_value) {
@@ -537,26 +535,39 @@ class Post_To_Email {
 		return true;
 	}
 
-	public function get_users($sort = 'display_name') {
+	public function get_users($sort = 'display_name', $scope = array()) {
 		$user_args = array(
 			'exclude' => self::$exclude_users,
 			'orderby' => $sort,
 			'fields' => array_merge(array('ID'), $this->get_wp_users_fields()),
-		);		       
-		$opt_in = $this->get_option('opt_in', true);
-		if ($opt_in) {
-			$user_args['meta_query'] = array(
-				'relation' => 'OR',
-				array(
-					'key' => self::$prefix,
-					'compare' => 'NOT LIKE',
-					'value' => 'never',
-				),
-				array(
-					'key' => self::$prefix,
-					'compare' => 'NOT EXISTS',
-				),
-			);
+		);
+		$opt_in = $this->get_option('opt_in', false);
+		$default_interval = $this->get_option('default_interval', 'never');
+		if (!empty($scope)) {
+			$scope = $this->make_array($scope);
+			if ($opt_in) {
+				$user_args['meta_query'] = array(
+					'relation' => 'OR',
+				);
+				foreach ($scope as $value) {
+					$user_args['meta_query'][] = array(
+						'key' => self::$prefix,
+						'compare' => 'LIKE',
+						'value' => $value,
+					);
+				}
+				if (in_array($default_interval, $scope)) {
+					$user_args['meta_query'][] = array(
+						'key' => self::$prefix,
+						'compare' => 'NOT EXISTS',
+					);
+				}
+			}
+			else {
+				if (!in_array($default_interval, $scope)) {
+					return array();
+				}
+			}
 		}
 		if ($arr = $this->get_option('hidden_roles', false)) {
 			$user_args['role__not_in'] = $arr;
@@ -565,7 +576,7 @@ class Post_To_Email {
 			return get_users($user_args);
 		}
 		// multisite
-		if (!$this->is_front_end() && !is_main_site()) {
+		if (!$this->is_front_end() && !is_main_site() && self::$is_test) {
 			return get_users($user_args);
 		}
 		$users = $users_arr = $sort_arr = array();
@@ -593,7 +604,7 @@ class Post_To_Email {
 	}
 
 	public function update_user_meta($user_id, $key, $value = '') {
-		if ($this->is_test()) {
+		if (self::$is_test) {
 			return;
 		}
 		$usermeta = $this->get_cache_wp_usermeta_extended($user_id);
@@ -818,7 +829,7 @@ class Post_To_Email {
 						return $str; // not active
 					}
 					$interval = $this->get_option('buddypress_reminder_interval', false);
-					if (!empty($interval) && $interval_time = strtotime("-".$interval, self::$time)) {
+					if (!empty($interval) && $interval_time = strtotime("-".trim($interval, "-"), self::$time)) {
 						$usermeta = $this->get_cache_wp_usermeta_extended($this->current_user->ID);
 						if (!empty($usermeta['last_sent_buddypress_reminder'])) {
 							$date_past = date(self::$date_format, $interval_time);
@@ -828,7 +839,7 @@ class Post_To_Email {
 						}
 					}
 					$fields_age = $this->get_option('buddypress_reminder_fields_age', false);
-					if (!empty($fields_age) && $fields_age_time = strtotime("-".$fields_age, self::$time)) {
+					if (!empty($fields_age) && $fields_age_time = strtotime("-".trim($fields_age, "-"), self::$time)) {
 						global $wpdb;
 						$bp = buddypress();
 						$last_updated = $wpdb->get_row( $wpdb->prepare("SELECT last_updated, f.* FROM {$bp->profile->table_name_data} d RIGHT JOIN {$bp->profile->table_name_fields} f ON d.field_id = f.id WHERE user_id = %d ORDER BY last_updated DESC LIMIT 1", $this->current_user->ID) );
@@ -872,12 +883,6 @@ class Post_To_Email {
 		return $str;
 	}
 
-	/* functions - admin */
-
-	private function is_test() {
-		return (bool)self::$is_test;
-	}
-
 	/* functions - cron */
 
 	public function cron_toggle($force = null) {
@@ -907,7 +912,7 @@ class Post_To_Email {
 		elseif ($cron && !$timestamp) {
 			wp_clear_scheduled_hook(self::$prefix.'_cron');
 			$time = strtotime("midnight tomorrow", self::$time);
-			wp_schedule_event($time, 'daily', self::$prefix.'_cron');
+			wp_schedule_event($time, 'twicedaily', self::$prefix.'_cron');
 		}
 	}
 
@@ -1066,37 +1071,10 @@ class Post_To_Email {
 
 	/* functions - mail */
 
-	private function get_posts_extended($options) {
+	private function get_posts_extended($options, $last_sent) {
 		if (!isset($this->current_user) || empty($this->current_user)) {
 			return false;
 		}
-		$usermeta = $this->get_cache_wp_usermeta_extended($this->current_user->ID);
-
-		$interval = $options['default_interval'];
-		if (!empty($options['opt_in']) && !empty($usermeta['interval'])) {
-			$interval = $usermeta['interval'];
-		}
-		if ($interval == 'never') {
-			return false;
-		}
-
-		$last_sent = $usermeta['last_sent'];
-		if (empty($last_sent)) {
-			switch ($interval) {
-				case 'daily':
-					$last_sent = date(self::$date_format, strtotime("-1 day", self::$time));
-					break;
-				case 'weekly':
-					global $wp_locale;
-					$start_of_week = $wp_locale->get_weekday($this->get_cache_wp_options('start_of_week', 1));
-					$last_sent = date(self::$date_format, strtotime("last ".$start_of_week, self::$time));
-					break;
-				default:
-					$last_sent = date('Y-m-01 H:i:s', self::$time);
-					break;
-			}
-		}
-
 		$posts = array();
 
 		$func = function() use ($options, $last_sent, &$posts) {
@@ -1126,9 +1104,10 @@ class Post_To_Email {
 					'nopaging' => true,
 					'ignore_sticky_posts' => true,
 					'suppress_filters' => false,
+					'orderby' => array('parent' => 'ASC'),
 				);
 				if ($mail_date == 'post_date') {
-					$args['orderby'] = 'date';
+					$args['orderby']['date'] = 'DESC';
 					$args['date_query'] = array(
 						array(
 							'column' => 'post_date_gmt',
@@ -1137,7 +1116,7 @@ class Post_To_Email {
 					);
 				}
 				else {
-					$args['orderby'] = 'modified';
+					$args['orderby']['modified'] = 'DESC';
 					$args['date_query'] = array(
 						array(
 							'column' => 'post_modified_gmt',
@@ -1198,9 +1177,55 @@ class Post_To_Email {
 		if (!isset($userdata->user_email) || empty($userdata->user_email)) {
 			return false;
 		}
+		$usermeta = $this->get_cache_wp_usermeta_extended($userdata->ID);
+
+		// check interval
+		$interval = '';
+		if (isset($options['opt_in']) && !empty($options['opt_in'])) {
+			if (isset($usermeta['interval']) && !empty($usermeta['interval'])) {
+				$interval = $usermeta['interval'];
+			}
+		}
+		if (empty($interval) && isset($options['default_interval']) && !empty($options['default_interval'])) {
+			$interval = $options['default_interval'];
+		}
+		if (empty($interval) || $interval == 'never') {
+			return false;
+		}
+
+		// check last_sent
+		switch ($interval) {
+			case 'daily':
+				$interval_last_sent = date(self::$date_format, strtotime("midnight yesterday", self::$time));
+				break;
+			case 'weekly':
+				global $wp_locale;
+				$start_of_week = $wp_locale->get_weekday($this->get_cache_wp_options('start_of_week', 1));
+				$interval_last_sent = date(self::$date_format, strtotime("last ".$start_of_week, self::$time));
+				break;
+			case 'monthly':
+			default:
+				$interval_last_sent = date('Y-m-01 00:00:00', self::$time);
+				break;
+		}
+		if (isset($usermeta['last_sent']) && !empty($usermeta['last_sent'])) {
+			if ($usermeta['last_sent'] > $interval_last_sent) {
+				return false; // not ready
+			}
+			$last_sent = $usermeta['last_sent'];
+			// limit to 1 month (or more) of back posts
+			$past_month = date('Y-m-01 00:00:00', strtotime("-1 month", self::$time));
+			if ($past_month > $last_sent) {
+				$last_sent = $past_month;
+			}
+		}
+		else {
+			$last_sent = $interval_last_sent;
+		}
+
 		$this->current_user = $userdata;
 
-		$posts = $this->get_posts_extended($options);
+		$posts = $this->get_posts_extended($options, $last_sent);
 		if (empty($posts)) {
 			unset($this->current_user);
 			return false;
@@ -1223,7 +1248,7 @@ class Post_To_Email {
 						"\t" => '',
 					);
 					$css = str_replace(array_keys($replace), $replace, $css);
-					$css = $this->trim_excess_space($css);
+					$css = $this->trim_excess_space($css)."\n";
 				}
 			}
 			$this->current_css = $css;
@@ -1267,24 +1292,24 @@ class Post_To_Email {
 		return $arr;
 	}
 
-	public function mail($options = array(), $to, $subject, $message, $headers = array()) {
-		$headers_default = array();
+	public function mail($options = array(), $to, $subject, $message) {
+		$headers = array();
 		if (isset($options['mail_from']) && !empty($options['mail_from'])) {
-			$headers_default[] = 'From: '.esc_attr($options['mail_from']);
+			$headers[] = 'From: '.$options['mail_from'];
 		}
 		if (isset($options['mail_replyto']) && !empty($options['mail_replyto'])) {
-			$headers_default[] = 'Reply-To: '.esc_attr($options['mail_replyto']);
+			$headers[] = 'Reply-To: '.$options['mail_replyto'];
 		}
-		$headers_default[] = 'Content-Type: text/html; charset=UTF-8';
-		$headers = array_merge($headers_default, $this->make_array($headers));
-		$headers = array_unique($headers);
-		$to = $options['admin_email']; // testing
+		$headers[] = 'Content-Type: text/html; charset=UTF-8';
 		if (wp_mail($to, $subject, $message, $headers)) {
 			$this->update_user_meta($this->current_user->ID, 'last_sent', date(self::$date_format, self::$time));
-			unset($this->current_user);
-			return true;
+			$res = true;
 		}
-		return false;
+		else {
+			$res = false;
+		}
+		unset($this->current_user);
+		return $res;
 	}
 
 }

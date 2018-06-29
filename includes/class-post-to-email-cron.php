@@ -61,15 +61,47 @@ class Post_To_Email_Cron {
 
 	private function cron() {
 		$options = $this->subclass->get_option();
-		$users = $this->subclass->get_users('user_email');
+
+		// which users?
+		$scope = array();
+		$scope_allowed = array('daily');
+		// first day of week?
+		global $wp_locale;
+		$start_of_week = $wp_locale->get_weekday($this->subclass->get_cache_wp_options('start_of_week', 1));
+		if ($start_of_week == date("l", $this->subclass::$time)) {
+			$scope_allowed[] = 'weekly';
+		}
+		// first day of month?
+		$date_of_month = date("j", $this->subclass::$time);
+		if (1 == absint($date_of_month)) {
+			$scope_allowed[] = 'monthly';
+		}
+		if (isset($options['opt_in']) && !empty($options['opt_in'])) {
+			$scope = $scope_allowed;
+		}
+		elseif (isset($options['default_interval']) && !empty($options['default_interval'])) {
+			if (in_array($options['default_interval'], $scope_allowed)) {
+				$scope[] = $options['default_interval'];
+			}
+		}
+		if (empty($scope)) {
+			return;
+		}
+
+		$this->messages[] = __FUNCTION__.' - scope - '.implode(",", $scope);
+
+		$users = $this->subclass->get_users('user_email', $scope);
 		foreach ($users as $userdata) {
 			if ($arr = $this->subclass->get_message_array($options, $userdata)) {
-				if ($this->subclass->mail($options, $arr['to'], $arr['$subject'], $arr['message'])) {
+				if ($this->subclass->mail($options, $arr['to'], $arr['subject'], $arr['message'])) {
 					$this->messages[] = __FUNCTION__.' - sent - '.$arr['to'];
 				}
 				else {
 					$this->messages[] = __FUNCTION__.' - not sent - '.$arr['to'];
 				}
+			}
+			else {
+				$this->messages[] = __FUNCTION__.' - no posts - '.$arr['to'];
 			}
 		}
 	}
@@ -84,7 +116,7 @@ class Post_To_Email_Cron {
 		echo $message;
 
 		// mail
-		$admin_email = $this->subclass->get_option('admin_email', false);
+		$admin_email = $this->subclass->get_option('admin_email', '');
 		if (empty($admin_email)) {
 			return;
 		}

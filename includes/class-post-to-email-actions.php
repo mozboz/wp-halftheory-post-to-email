@@ -618,7 +618,7 @@ class Post_To_Email_Actions {
 					"\t" => '',
 				);
 				$css = str_replace(array_keys($replace), $replace, $css);
-				$plugin->subclass->current_css = $plugin->subclass->trim_excess_space($css);
+				$plugin->subclass->current_css = $plugin->subclass->trim_excess_space($css)."\n";
 
 				if ($arr = $plugin->subclass->get_message_array($options, $test_userdata)) : ?>
 					<p><label style="display: inline-block; width: 16em;"><?php _e('From'); ?></label>
@@ -630,7 +630,7 @@ class Post_To_Email_Actions {
 					<p><label style="display: inline-block; width: 16em;"><?php _e('Subject'); ?></label>
 					<?php echo esc_html($arr['subject']); ?></p>
 					<hr />
-					<iframe srcdoc="<html><body><?php echo esc_attr($arr['message']); ?></body></html>" style="width: 100%; height: 20em;"></iframe>
+					<iframe srcdoc="<html><body><?php echo esc_attr($arr['message']); ?></body></html>" style="width: 100%; height: 30em;"></iframe>
 				<?php else : ?>
 					<p><?php _e('No mail.'); ?></p>
 				<?php endif; ?>

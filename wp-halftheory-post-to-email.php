@@ -52,9 +52,7 @@ class Post_To_Email_Plugin {
 		if (!$plugin->subclass) {
 			return;
 		}
-
 		$plugin->subclass->cron_toggle();
-
 		// add defaults if they don't exist
 		$options = $plugin->subclass->get_option();
 		if (empty($options)) {
@@ -62,8 +60,8 @@ class Post_To_Email_Plugin {
 			$option_defaults = array(
 				'admin_email' => get_option('admin_email', ''),
 				'opt_in' => 1,
-				'default_interval' => 'monthly',
-				'mail_from' => $blogname. '<'.get_option('admin_email', '').'>',
+				'default_interval' => 'weekly',
+				'mail_from' => $blogname.' <'.get_option('admin_email', '').'>',
 				'mail_subject' => '###BLOGNAME### Digest - ###DATE###',
 				'mail_message_excerpt_length' => 250,
 			);
@@ -75,7 +73,6 @@ class Post_To_Email_Plugin {
         		// error
         	}
 		}
-
 		return $plugin;
 	}
 
@@ -84,9 +81,7 @@ class Post_To_Email_Plugin {
 		if (!$plugin->subclass) {
 			return;
 		}
-
 		$plugin->subclass->cron_toggle(false);
-
 		apply_filters('posttoemail_deactivation', $plugin->subclass::$prefix);
 		return;
 	}
@@ -96,9 +91,7 @@ class Post_To_Email_Plugin {
 		if (!$plugin->subclass) {
 			return;
 		}
-
 		$plugin->subclass->cron_toggle(false);
-
 		// remove options
 		if (is_multisite()) {
 			delete_site_option($plugin->subclass::$prefix);
@@ -113,7 +106,6 @@ class Post_To_Email_Plugin {
 		// remove usermeta
 		global $wpdb;
 		$wpdb->query("DELETE FROM $wpdb->usermeta WHERE meta_key = '".$plugin->subclass::$prefix."'");
-
 		apply_filters('posttoemail_uninstall', $plugin->subclass::$prefix);
 		return;
 	}
