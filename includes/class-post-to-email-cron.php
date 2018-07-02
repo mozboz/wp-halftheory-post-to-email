@@ -101,7 +101,7 @@ class Post_To_Email_Cron {
 				}
 			}
 			else {
-				$this->messages[] = __FUNCTION__.' - no posts - '.$arr['to'];
+				$this->messages[] = __FUNCTION__.' - no posts - '.$userdata->user_email;
 			}
 		}
 	}

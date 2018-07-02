@@ -630,7 +630,7 @@ class Post_To_Email_Actions {
 					<p><label style="display: inline-block; width: 16em;"><?php _e('Subject'); ?></label>
 					<?php echo esc_html($arr['subject']); ?></p>
 					<hr />
-					<iframe srcdoc="<html><body><?php echo esc_attr($arr['message']); ?></body></html>" style="width: 100%; height: 30em;"></iframe>
+					<iframe srcdoc="<?php echo esc_attr($arr['message']); ?>" style="width: 100%; height: 30em;"></iframe>
 				<?php else : ?>
 					<p><?php _e('No mail.'); ?></p>
 				<?php endif; ?>

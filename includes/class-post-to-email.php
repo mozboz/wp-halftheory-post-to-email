@@ -1233,28 +1233,6 @@ class Post_To_Email {
 
 		$str = '';
 
-		if (isset($this->current_css) && !empty($this->current_css)) {
-			$str .= $this->current_css;
-		}
-		elseif (!isset($this->current_css)) {
-			$css = '';
-			if (!empty($options['mail_stylesheet']) && strpos($options['mail_stylesheet'], '.css') !== false) {
-				if ($css_file = $this->get_file_contents($options['mail_stylesheet'])) {
-					$css = '<style type="text/css">';
-					$css .= $css_file;
-					$css .= '</style>';
-					$replace = array(
-						"\n" => '',
-						"\t" => '',
-					);
-					$css = str_replace(array_keys($replace), $replace, $css);
-					$css = $this->trim_excess_space($css)."\n";
-				}
-			}
-			$this->current_css = $css;
-			$str .= $this->current_css;
-		}
-
 		if (empty($options['disable_richedit'])) {
 			$str .= wpautop($this->replace_hash($options['mail_message_header']));
 			foreach ($posts as $value) {
@@ -1274,12 +1252,47 @@ class Post_To_Email {
 			$str .= $this->replace_hash($options['mail_message_footer']);
 		}
 
+		$str = trim($str);
 		if (empty($str)) {
 			unset($this->current_user);
 			return false;
 		}
+
+		// wrap html
+		$message = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'."\n";
+		$message .= '<html xmlns="http://www.w3.org/1999/xhtml">'."\n";
+		$message .= '<head>'."\n";
+		$message .= '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />'."\n";
+		$message .= '<title></title>'."\n";
+		// css
+		if (!isset($this->current_css)) {
+			$css = '';
+			if (!empty($options['mail_stylesheet']) && strpos($options['mail_stylesheet'], '.css') !== false) {
+				if ($css_file = $this->get_file_contents($options['mail_stylesheet'])) {
+					$css = '<style type="text/css">';
+					$css .= $css_file;
+					$css .= '</style>';
+					$replace = array(
+						"\n" => '',
+						"\t" => '',
+					);
+					$css = str_replace(array_keys($replace), $replace, $css);
+					$css = $this->trim_excess_space($css)."\n";
+				}
+			}
+			$this->current_css = $css;
+		}
+		if (isset($this->current_css) && !empty($this->current_css)) {
+			$message .= $this->current_css;
+		}
+		$message .= '</head>'."\n";
+		$message .= '<body>'."\n";
+		$message .= $str."\n";
+		$message .= '</body>'."\n";
+		$message .= '</html>'."\n";
+
 		$arr = array(
-			'message' => $str,
+			'message' => $message,
 			'subject' => $this->replace_hash($options['mail_subject']),
 		);
 		if (isset($this->current_user->display_name) && !empty($this->current_user->display_name)) {
@@ -1300,7 +1313,8 @@ class Post_To_Email {
 		if (isset($options['mail_replyto']) && !empty($options['mail_replyto'])) {
 			$headers[] = 'Reply-To: '.$options['mail_replyto'];
 		}
-		$headers[] = 'Content-Type: text/html; charset=UTF-8';
+		$headers[] = 'Precedence: bulk';
+		$headers[] = 'Content-Type: text/html; charset="UTF-8"';
 		if (wp_mail($to, $subject, $message, $headers)) {
 			$this->update_user_meta($this->current_user->ID, 'last_sent', date(self::$date_format, self::$time));
 			$res = true;
