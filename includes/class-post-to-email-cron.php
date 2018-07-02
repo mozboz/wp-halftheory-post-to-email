@@ -88,21 +88,22 @@ class Post_To_Email_Cron {
 			return;
 		}
 
-		$this->messages[] = __FUNCTION__.' - scope - '.implode(",", $scope);
-
 		$users = $this->subclass->get_users('user_email', $scope);
 		foreach ($users as $userdata) {
 			if ($arr = $this->subclass->get_message_array($options, $userdata)) {
 				if ($this->subclass->mail($options, $arr['to'], $arr['subject'], $arr['message'])) {
-					$this->messages[] = __FUNCTION__.' - sent - '.$arr['to'];
+					// $this->messages[] = __FUNCTION__.' - sent - '.$arr['to'];
 				}
 				else {
 					$this->messages[] = __FUNCTION__.' - not sent - '.$arr['to'];
 				}
 			}
 			else {
-				$this->messages[] = __FUNCTION__.' - no posts - '.$userdata->user_email;
+				// $this->messages[] = __FUNCTION__.' - no posts - '.$userdata->user_email;
 			}
+		}
+		if (!empty($this->messages)) {
+			$this->messages[] = __FUNCTION__.' - scope - '.implode(",", $scope);
 		}
 	}
 
