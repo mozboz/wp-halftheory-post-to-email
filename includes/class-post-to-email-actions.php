@@ -177,33 +177,40 @@ class Post_To_Email_Actions {
                   $updated = '<div class="updated"><p><strong>Mail sent.</strong></p></div>';
                   $options = $plugin->subclass->get_option();
                   $test_userdata = get_userdata($_POST[$plugin->prefix.'_test_user_id']);
-                  if ($arr = $plugin->subclass->get_message_array($options, $test_userdata)) {
+      
+                  $arr = $plugin->subclass->get_message_array($options, $test_userdata);
+                  if ($arr) {
                     if (isset($_POST[$plugin->prefix.'_test_send_to_admin'])) {
                       $res = $plugin->subclass->mail($options, $options['admin_email'], $arr['subject'], $arr['message']);
                       if (!$res) {
+                        $error = $plugin->subclass::class() . "->mail() function failed";
                         $has_error = true;
                       }
                     }
                     if (isset($_POST[$plugin->prefix.'_test_send_to_user'])) {
                       $res = $plugin->subclass->mail($options, $arr['to'], $arr['subject'], $arr['message']);
                       if (!$res) {
+                        $error = $plugin->subclass::class() . "->mail() function failed";
                         $has_error = true;
                       }
                     }
                   }
                   else {
-                    $has_error = true;
+                    // sometimes there might be no digest to send (e.g. because we are on the test site or because
+                    // not enough time has passed) but we still want to send a test mail.
+                    $res = $plugin->subclass->mail($options, $arr['to'], "test", "test");
+                    if (!$res) {
+                      $error = get_class($plugin->subclass) . "->mail() function failed";
+                      $has_error = true;
+                    }
                   }
                 }
               }
               if ($has_error) {
-            echo $error;
+                die( $error);
               }
-              else {
-            echo $updated;
-              }
-            return;
-          }
+              return;
+            }
 
 	        	// post_types
 	        	if ($plugin->tab_active == 'post') {
