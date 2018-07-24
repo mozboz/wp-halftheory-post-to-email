@@ -165,45 +165,45 @@ class Post_To_Email_Actions {
 					return;
 				}
 
-	            $updated = '<div class="updated"><p><strong>Options saved.</strong></p></div>';
-	            $error = '<div class="error"><p><strong>Error: There was a problem.</strong></p></div>';
+        $updated = '<div class="updated"><p><strong>Options saved.</strong></p></div>';
+        $error = '<div class="error"><p><strong>Error: There was a problem.</strong></p></div>';
 
 				// test mail
 				if ($plugin->tab_active == 'test') {
-		            $updated = '<div class="updated"><p><strong>Options updated.</strong></p></div>';
+		      $updated = '<div class="updated"><p><strong>Options updated.</strong></p></div>';
 					$has_error = false;
-		        	if (isset($_POST[$plugin->prefix.'_test_user_id']) && !empty($_POST[$plugin->prefix.'_test_user_id'])) {
-		        		if (isset($_POST[$plugin->prefix.'_test_send_to_admin']) || isset($_POST[$plugin->prefix.'_test_send_to_user'])) {
-		            		$updated = '<div class="updated"><p><strong>Mail sent.</strong></p></div>';
-				            $options = $plugin->subclass->get_option();
-				            $test_userdata = get_userdata($_POST[$plugin->prefix.'_test_user_id']);
-		        			if ($arr = $plugin->subclass->get_message_array($options, $test_userdata)) {
-								if (isset($_POST[$plugin->prefix.'_test_send_to_admin'])) {
-									$res = $plugin->subclass->mail($options, $options['admin_email'], $arr['subject'], $arr['message']);
-									if (!$res) {
-										$has_error = true;
-									}
-								}
-								if (isset($_POST[$plugin->prefix.'_test_send_to_user'])) {
-									$res = $plugin->subclass->mail($options, $arr['to'], $arr['subject'], $arr['message']);
-									if (!$res) {
-										$has_error = true;
-									}
-								}
-							}
-							else {
-								$has_error = true;
-							}
-						}
-		        	}
-		        	if ($has_error) {
-						echo $error;
-		        	}
-		        	else {
-						echo $updated;
-		        	}
-					return;
-				}
+            if (isset($_POST[$plugin->prefix.'_test_user_id']) && !empty($_POST[$plugin->prefix.'_test_user_id'])) {
+              if (isset($_POST[$plugin->prefix.'_test_send_to_admin']) || isset($_POST[$plugin->prefix.'_test_send_to_user'])) {
+                  $updated = '<div class="updated"><p><strong>Mail sent.</strong></p></div>';
+                  $options = $plugin->subclass->get_option();
+                  $test_userdata = get_userdata($_POST[$plugin->prefix.'_test_user_id']);
+                  if ($arr = $plugin->subclass->get_message_array($options, $test_userdata)) {
+                    if (isset($_POST[$plugin->prefix.'_test_send_to_admin'])) {
+                      $res = $plugin->subclass->mail($options, $options['admin_email'], $arr['subject'], $arr['message']);
+                      if (!$res) {
+                        $has_error = true;
+                      }
+                    }
+                    if (isset($_POST[$plugin->prefix.'_test_send_to_user'])) {
+                      $res = $plugin->subclass->mail($options, $arr['to'], $arr['subject'], $arr['message']);
+                      if (!$res) {
+                        $has_error = true;
+                      }
+                    }
+                  }
+                  else {
+                    $has_error = true;
+                  }
+                }
+              }
+              if ($has_error) {
+            echo $error;
+              }
+              else {
+            echo $updated;
+              }
+            return;
+          }
 
 	        	// post_types
 	        	if ($plugin->tab_active == 'post') {
