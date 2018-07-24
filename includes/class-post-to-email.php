@@ -1194,20 +1194,29 @@ class Post_To_Email {
 		}
 
 		// check last_sent
+    $interval = 'weekly';
 		switch ($interval) {
 			case 'daily':
-				$interval_last_sent = date(self::$date_format, strtotime("midnight yesterday", self::$time));
+				$interval_last_sent = date(self::$date_format, strtotime("midnight", self::$time));
 				break;
 			case 'weekly':
 				global $wp_locale;
 				$start_of_week = $wp_locale->get_weekday($this->get_cache_wp_options('start_of_week', 1));
-				$interval_last_sent = date(self::$date_format, strtotime("last ".$start_of_week, self::$time));
+        if (strtolower(date('l')) == $start_of_week) {
+          // if (say start of week is Monday and) it is Monday, then the cutoff for last sent
+          // should be last midnight
+          $interval_last_sent = date(self::$date_format, strtotime("midnight", self::$time));
+        } else {
+          // but if it is, say, Tuesday then we want last Monday (yesterday)
+          $interval_last_sent = date(self::$date_format, strtotime("last ".$start_of_week, self::$time));
+        }
 				break;
 			case 'monthly':
 			default:
 				$interval_last_sent = date('Y-m-01 00:00:00', self::$time);
 				break;
 		}
+    die($interval_last_sent);
 		if (isset($usermeta['last_sent']) && !empty($usermeta['last_sent'])) {
 			if ($usermeta['last_sent'] > $interval_last_sent) {
 				return false; // not ready
