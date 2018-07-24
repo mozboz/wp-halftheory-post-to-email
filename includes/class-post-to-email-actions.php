@@ -177,30 +177,26 @@ class Post_To_Email_Actions {
                   $updated = '<div class="updated"><p><strong>Mail sent.</strong></p></div>';
                   $options = $plugin->subclass->get_option();
                   $test_userdata = get_userdata($_POST[$plugin->prefix.'_test_user_id']);
-      
                   $arr = $plugin->subclass->get_message_array($options, $test_userdata);
                   if ($arr) {
-                    if (isset($_POST[$plugin->prefix.'_test_send_to_admin'])) {
-                      $res = $plugin->subclass->mail($options, $options['admin_email'], $arr['subject'], $arr['message']);
-                      if (!$res) {
-                        $error = $plugin->subclass::class() . "->mail() function failed";
-                        $has_error = true;
-                      }
-                    }
-                    if (isset($_POST[$plugin->prefix.'_test_send_to_user'])) {
-                      $res = $plugin->subclass->mail($options, $arr['to'], $arr['subject'], $arr['message']);
-                      if (!$res) {
-                        $error = $plugin->subclass::class() . "->mail() function failed";
-                        $has_error = true;
-                      }
+                    $subject = $arr['subject'];
+                    $message = $arr['message'];
+                  } else {
+                    // sometimes there might be no digest to send (e.g. because we are on the dev site or because
+                    // not enough time has passed) but we still want to send a test mail. 
+                    $subject = $message = 'test';  
+                  }              
+                  if (isset($_POST[$plugin->prefix.'_test_send_to_admin'])) {
+                    $res = $plugin->subclass->mail($options, $options['admin_email'], $subject, $message);
+                    if (!$res) {
+                      $error = $plugin->subclass::class() . "->mail() function failed";
+                      $has_error = true;
                     }
                   }
-                  else {
-                    // sometimes there might be no digest to send (e.g. because we are on the test site or because
-                    // not enough time has passed) but we still want to send a test mail.
-                    $res = $plugin->subclass->mail($options, $arr['to'], "test", "test");
+                  if (isset($_POST[$plugin->prefix.'_test_send_to_user'])) {
+                    $res = $plugin->subclass->mail($options, $test_userdata->data->user_email, $subject, $message);
                     if (!$res) {
-                      $error = get_class($plugin->subclass) . "->mail() function failed";
+                      $error = $plugin->subclass::class() . "->mail() function failed";
                       $has_error = true;
                     }
                   }
