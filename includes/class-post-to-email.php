@@ -1194,7 +1194,6 @@ class Post_To_Email {
 		}
 
 		// check last_sent
-    $interval = 'weekly';
 		switch ($interval) {
 			case 'daily':
 				$interval_last_sent = date(self::$date_format, strtotime("midnight", self::$time));
@@ -1216,7 +1215,6 @@ class Post_To_Email {
 				$interval_last_sent = date('Y-m-01 00:00:00', self::$time);
 				break;
 		}
-    die($interval_last_sent);
 		if (isset($usermeta['last_sent']) && !empty($usermeta['last_sent'])) {
 			if ($usermeta['last_sent'] > $interval_last_sent) {
 				return false; // not ready
