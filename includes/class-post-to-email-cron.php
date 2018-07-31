@@ -64,7 +64,7 @@ class Post_To_Email_Cron {
 
 		// which users?
 		$scope = array();
-		$scope_allowed = array('daily');
+		$scope_allowed = array('daily', 'weekly');
 		// first day of week?
 		global $wp_locale;
 		$start_of_week = $wp_locale->get_weekday($this->subclass->get_cache_wp_options('start_of_week', 1));
