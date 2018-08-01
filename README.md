@@ -28,7 +28,7 @@ The following filters are available for plugin/theme customization:
 
 # Debugging notes for GCA
 ## How it works
-A scheduled job runs twice daily (see [GCA Scheduled Jobs] (https://globalcampusalumni.org/wp-admin/tools.php?page=crontrol_admin_manage_page)). For each user, if they are set to weekly then it sends to them provided that their last_sent date is before the start (midnight between Sunday and Monday) of the current week. If daily, the most recent midnight. If monthly, the midnight at start of month.
+A scheduled job runs twice daily (see [GCA Scheduled Jobs](https://globalcampusalumni.org/wp-admin/tools.php?page=crontrol_admin_manage_page)). For each user, if they are set to weekly then it sends to them provided that their last_sent date is before the start (midnight between Sunday and Monday) of the current week. If daily, the most recent midnight. If monthly, the midnight at start of month.
 ## Checking that the emails have sent at the correct time
 For each user, the interval they are set to receive it at, plus the time at which it was last sent to them, are stored (along with other data) in a JSON object in a single field in the database. So it is not so easy to do, e.g., range queries on it. So the best way to tell how many people were sent the weekly digest on a certain day is to do something like this:
 
