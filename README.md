@@ -41,6 +41,10 @@ With current GCA system, for weekly ones, you can expect about 1200 results if i
 
 You should get about 36, which is the current number that are failing for other reasons. For monthly, I got 18 successes and 1 failure.
 
+If you want to include email addresses you will have to do a join, e.g.:
+
+`SELECT user_email FROM gcawp_users join gcawp_usermeta on id = user_id WHERE meta_key = "posttoemail" and meta_value like "%monthly%" and meta_value  like "%2018-08-01%";`
+
 
 
 
