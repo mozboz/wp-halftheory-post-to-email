@@ -34,11 +34,11 @@ You can send a test from the test tab. If the person is due a digest then that w
 ## SMTP  vs direct mail
 The live server sends mail directly, but the dev server uses SMTP to send through the GCA mail server.
 ## Checking that the emails have sent at the correct time
-For each user, the interval they are set to receive it at, plus the time at which it was last sent to them, are stored (along with other data) in a JSON object in a single field in the database. So it is not so easy to do, e.g., range queries on it. So the best way to tell how many people were sent the weekly digest on a certain day is to do something like this:
+For each user, the interval they are set to receive it at, plus the time at which it was last sent to them, are stored (along with other data) in a JSON object in a single field in the database. So it is not so easy to do, e.g., range queries on it. So the best way to tell how many people were sent the weekly digest on a certain day is to do something like this (using database **gcalumni1**):
 
 `SELECT * FROM gcawp_usermeta WHERE meta_key = "posttoemail" and meta_value like "%weekly%" and meta_value like "%2018-08-31%";`
 
-With current GCA system, for weekly ones, you can expect about 1200 results if it is working. If you then see how many weekly were *not* sent on specified day:
+With the current GCA system, for weekly ones, you can expect about 1200 results if it is working. If you then see how many weekly were *not* sent on specified day:
 
 
 `SELECT * FROM gcawp_usermeta WHERE meta_key = "posttoemail" and meta_value like "%weekly%" and meta_value not like "%2018-08-31%";`
