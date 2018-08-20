@@ -12,6 +12,11 @@ posttoemail_message_array
 // Exit if accessed directly.
 defined('ABSPATH') || exit;
 
+function post_to_email_log($message) {
+  
+  file_put_contents('/home/gca/web/wp-content/plugins/wp-halftheory-post-to-email/test.log', date("Y-m-d H:i:s") . "  $message\n", FILE_APPEND);
+}
+
 if (!class_exists('Post_To_Email')) :
 class Post_To_Email {
 
@@ -1193,6 +1198,8 @@ class Post_To_Email {
       return false;
     }
 
+    $userLogString = "UserID: " . $userdata->ID . ", email: " . $userdata->user_email;
+
     // check last_sent
     switch ($interval) {
       case 'daily':
@@ -1215,8 +1222,12 @@ class Post_To_Email {
         $interval_last_sent = date('Y-m-01 00:00:00', self::$time);
         break;
     }
+
+    post_to_email_log($userLogString . " intervalLastSent: ".$interval_last_sent." user last_sent: ".$usermeta['last_sent']);
+
     if (isset($usermeta['last_sent']) && !empty($usermeta['last_sent'])) {
       if ($usermeta['last_sent'] > $interval_last_sent) {
+        post_to_email_log($userLogString . " ending because user last_sent > interval_last_sent");
         return false; // not ready
       }
       $last_sent = $usermeta['last_sent'];
@@ -1230,11 +1241,17 @@ class Post_To_Email {
       $last_sent = $interval_last_sent;
     }
 
+    post_to_email_log($userLogString . " last_sent=".$last_sent);
+
     $this->current_user = $userdata;
 
     $posts = $this->get_posts_extended($options, $last_sent);
+    
+    post_to_email_log($userLogString . " post count to send: ".count($posts));
+
     if (empty($posts)) {
       unset($this->current_user);
+      post_to_email_log($userLogString . " ending because no posts");
       return false;
     }
 
@@ -1309,6 +1326,7 @@ class Post_To_Email {
       $arr['to'] = $this->current_user->user_email;
     }
     $arr = apply_filters('posttoemail_message_array', $arr, $options, $userdata);
+    post_to_email_log($userLogString . " successfully built email");
     return $arr;
   }
 
