@@ -1208,7 +1208,7 @@ class Post_To_Email {
       case 'weekly':
         global $wp_locale;
         $start_of_week = $wp_locale->get_weekday($this->get_cache_wp_options('start_of_week', 1));
-        if (strtolower(date('l')) == $start_of_week) {
+        if (strtolower(date('l')) == strtolower($start_of_week)) {
           // if (say start of week is Monday and) it is Monday, then the cutoff for last sent
           // should be last midnight
           $interval_last_sent = date(self::$date_format, strtotime("midnight", self::$time));
@@ -1223,7 +1223,7 @@ class Post_To_Email {
         break;
     }
 
-    post_to_email_log($userLogString . " intervalLastSent: ".$interval_last_sent." user last_sent: ".$usermeta['last_sent']);
+    post_to_email_log($userLogString . " intervalLastSent: ".$interval_last_sent." user last_sent: ".$usermeta['last_sent']." interval: ".$interval);
 
     if (isset($usermeta['last_sent']) && !empty($usermeta['last_sent'])) {
       if ($usermeta['last_sent'] > $interval_last_sent) {
@@ -1241,7 +1241,7 @@ class Post_To_Email {
       $last_sent = $interval_last_sent;
     }
 
-    post_to_email_log($userLogString . " last_sent=".$last_sent);
+    post_to_email_log($userLogString . " calculated last_sent=".$last_sent);
 
     $this->current_user = $userdata;
 
